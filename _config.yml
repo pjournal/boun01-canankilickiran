@@ -1,3 +1,4 @@
-theme: jekyll-theme-cayman
-title: Canan Kılıçkıran-IE48A Journal
-description:Boğaziçi University-IE48A. You can change from config.yml file.
+theme: "jekyll-theme-cayman"
+title: "Canan Kılıçkıran-IE48A Journal"
+description: "2019-2020 term- IE48A- Bogazici University"
+
