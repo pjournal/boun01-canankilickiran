@@ -1,5 +1,7 @@
 # Here are IE48A assignments:
 
+## [Assignment 2](https://github.com/pjournal/boun01-canankilickiran/blob/gh-pages/HW2.html)
+
 # Here are in class exercises:
 
 ## Week 3:
