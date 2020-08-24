@@ -1,0 +1,223 @@
+---
+title: "IE48A ASSIGNMENT 2"
+author: "Canan Kilickiran"
+date: "17 08 2020"
+output: html_document
+---
+
+```{r setup, include=TRUE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("C:/Users/cananki/Desktop/Canan/Kitaplar/BOĞAZİÇİ/IE48A-Data Analysis/HW2")
+#Required Packages
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(tidyverse)
+library(tidyr)
+library(ggthemes)
+
+```
+### DESCRIPTION
+
+In this assignment,July 2020’s electricity prices will be analyzed. The data used in this assignment is downloaded [here](https://rapor.epias.com.tr/rapor/xhtml/ptfSmfListeleme.xhtml). 
+
+### TERMINOLOGY
+
+The terminologies used in this assignment are explained below:
+
+MCP: Market Clearing Price
+SMP:System Marginal Price
+if system has energy deficit, then SMP>MCP
+if system has energy surplus, then SMP<MCP
+
+### DATA IMPORT
+
+```{r rawData}
+rawData  <- read.csv("HW2_raw_data.csv",header=TRUE)
+rawData %>% glimpse()
+
+```
+
+Select only the necessary columns, rename those columns and also add below columns: 
+-date:Date without hours
+-weekDay:Day of Week
+-hour:Hour of the day
+Also, in order to have more descriptive graphs define data_longer dataset.
+
+```{r glimpse}
+
+data<-rawData %>% 
+  select(dt=Tarih,MCP=PTF,SMP=SMF)%>% 
+  arrange(dt)%>% 
+  mutate(dateTime=as.POSIXct(factor(dt), format="%d.%m.%y %H:%M")) %>%
+  transmute(dateTime, date=as_date(dateTime), weekDay = wday(dateTime,label = TRUE,week_start=1) ,
+            hour = hour(dateTime),MCP,SMP, Difference =(MCP-SMP))
+
+data%>%glimpse()
+
+data_longer<-data %>%
+  pivot_longer(cols=c(MCP, SMP), names_to="priceTypes", values_to="priceValues")
+
+```
+
+1. ) First of all, the total average of MCP and SMP values for July 2020 are analyzed. As can be seen from the table that average of MCP (Market Clearing Price) are less than SMP (System Marginal Price) which means that in June 2020 there has been enery deficit at overall.
+
+```{r ,message=FALSE}
+totalMean<-data %>% 
+  summarize(AvgMCP=mean(MCP),AvgSMP=mean(SMP),AvgDiff=mean(Difference))
+
+knitr::kable(totalMean,format="markdown")
+
+```
+
+2.)  The averages of MCP and SMP for each week day can be seen on the below table. It seems that on Wednesdays and Fridays MCP is greater than SMP which indicates energy surplus. Also, in average, MCP and SMP values are at their highest levels at Wednesday and Monday with values of 306.92 and 316.73, respectively. In addition, average MCP and SMP values are at their lowest levels at Sunday and Wednesday with values of 275.01 and 275.77, respectively.
+
+```{r ,message=FALSE}
+
+dailyMeans<-data %>% 
+  group_by(weekDay)%>%
+  summarize(AvgMCP=mean(MCP),AvgSMP=mean(SMP),AvgDiff=mean(Difference))
+
+knitr::kable(dailyMeans,format="markdown")
+```
+*2.1.)Daily price averages plot for each week day:*
+
+```{r,message=FALSE}
+plot_dailyAv<-data_longer%>%
+                 group_by(weekDay, priceTypes)%>%
+                 summarize(DailyAveragePrice=mean(priceValues))
+
+ggplot(plot_dailyAv, aes(x=weekDay , y=DailyAveragePrice, fill=priceTypes, label=round(DailyAveragePrice, digits = 0))) +
+            geom_col(position="dodge") +
+            theme_minimal() +
+            labs(x= "Day of Week",
+                 y="Daily Average Prices")+
+            ggtitle("Daily average prices for each week in July 2020")+
+            geom_text(position = position_dodge(1.2))+
+            theme(panel.grid = element_blank())
+            
+            
+            
+
+```
+
+3.) Both from the table and from the plot, it can interpreted that between  11:00 AM and 11:00 PM both average MCP and SMP are above average and mostly SMP is greater than MCP which indicates an energy deficit. Also, it is noticible that at 06.00 AM both average MCP and SMP levels hit to the bottom level of ~213.
+    In addition,highest MCP level is occured at between 08:00 PM and 09.00 PM with a value of ~316 and highest SMP level is occured at between 03:00 PM and 04.00 PM with a value of ~330.
+
+```{r ,message=FALSE}
+
+hourlyMeans<-data %>% 
+  group_by(hour)%>%
+  summarize(AvgMCP=mean(MCP),AvgSMP=mean(SMP),AvgDiff=mean(Difference))
+
+knitr::kable(hourlyMeans, format="markdown")
+
+```
+
+*3.1.)Hourly price averages plot:*
+
+```{r,message=FALSE}
+plot_hourlyAv<-data_longer%>%
+                 group_by(hour, priceTypes)%>%
+                 summarize(HourlyAveragePrice=mean(priceValues))
+
+ggplot(plot_hourlyAv, aes(x=hour,y=HourlyAveragePrice, color=priceTypes)) +
+            geom_line() +
+            theme_minimal() +
+            labs(x= "Hour of Day",
+                 y="Hourly Average Prices")+
+            scale_x_continuous(breaks = 1:23)+
+            theme(legend.position = "top")+
+            ggtitle("Hourly Average Prices in July 2020")+
+            #add total average of MCP line
+            geom_abline(slope = 0, intercept = totalMean$AvgMCP, colour="darkred", linetype="dashed")+
+             #add total average of SMP line
+            geom_abline(slope = 0, intercept = totalMean$AvgSMP, colour= "deepskyblue3",linetype="dashed")
+  
+
+
+```
+
+
+
+4.) Throught June 2020 average MCP values does not deviate much from the total average but from the middle of June SMP levels starts to increase but there are outliers.
+
+```{r,message=FALSE}
+dateMeans<-data_longer %>% 
+  group_by(date,priceTypes)%>%
+  summarize(avgPrices=mean(priceValues))
+
+```
+
+*4.1.)Plot MCP and SMP prices throught June 2020:*
+```{r,message=FALSE}
+
+ggplot(dateMeans, aes(x=date , y=avgPrices, color=priceTypes)) +
+            geom_point() +
+            theme_minimal() +
+            labs(x= "Date",
+                 y="Average Price")+
+            ggtitle("MCP vs SMP Prices in July 2020") +
+            theme(legend.position="top",axis.text.x = element_text(angle=45,hjust=1,vjust=1))
+            
+
+  
+
+```
+
+5.) To further interpret the data, MCP and SMP levels for each week day and for each  hour is plotted.For each day, between 05:00 AM and 06:00 AM the average MCP levels are at their lowest levels.Also, on Sunday at almost each hour average SMP levels are less than the average SMP values of other week days.
+
+  As for SMP values, similar conclusions can be drawn.
+
+```{r,message=FALSE}
+DayHourData<-data %>% 
+  group_by(weekDay,hour)%>%
+  summarize(AvgMCP=mean(MCP),
+            AvgSMP=mean(SMP))
+
+```
+
+*5.1.)Heatmap of MCP:*
+```{r,message=FALSE}
+
+ggplot(DayHourData, aes(x=weekDay , y=hour, fill=AvgMCP)) +
+            geom_tile() +
+            theme_minimal() +
+            ggtitle("Average MCP values") +
+            labs(x= "Day of Week",
+                 y="Hourly Average Prices")+
+            scale_y_continuous(breaks = 1:23)
+```
+ 
+*5.2.)Heatmap of SMP:*
+
+```{r,message=FALSE}
+
+ggplot(DayHourData, aes(x=weekDay , y=hour, fill=AvgSMP)) +
+            geom_tile() +
+            theme_minimal() +
+            ggtitle("Average SMP values") +
+            labs(x= "Day of Week",
+                 y="Hourly Average Prices")+
+            scale_y_continuous(breaks = 1:23)
+```
+ 
+### References:
+
+https://ggplot2.tidyverse.org/reference/geom_text.html
+https://ggplot2.tidyverse.org/reference/geom_abline.html
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
