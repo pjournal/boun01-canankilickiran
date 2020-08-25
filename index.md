@@ -1,6 +1,7 @@
 # Here are IE48A assignments:
 
-## [Assignment 2](https://pjournal.github.io/boun01-canankilickiran.git/HW2.html)
+## [Assignment 2](https://pjournal.github.io/boun01-canankilickiran/HW2.html)
+
 
 # Here are in class exercises:
 
