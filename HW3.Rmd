@@ -1,0 +1,445 @@
+---
+title: "IE48A-Homework 3"
+author: "Canan Kilickiran"
+date: "12 09 2020"
+output: 
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    toc_depth: 4
+---
+
+<style>
+
+#TOC {
+  color: #708090;
+  font-family: Calibri;
+  border-color: #708090;
+}
+
+#header {
+  color: #F08080;
+  background-color: #F5F5F5;
+  font-family: Calibri;
+}
+
+body {
+  color: #708090;
+  font-family: Calibri;
+  background-color: #F5F5F5;
+}
+
+pre {
+  color: #708090;
+  background-color: #F8F8FF;
+}
+</style>
+
+# Assignment: Esoph and Young People Survey
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message=FALSE, warning=FALSE}
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(tidyverse)
+library(tidyr)
+library(kableExtra)
+library(openxlsx)
+library(readxl)
+library(scales)
+library(car)
+library(factoextra)
+```
+
+## Esoph Data
+
+In this part of the assignment, it will be analyzed whether (o)esophageal cancer is related to alcohol consumption, age or tobacco consumption. The Esoph data set will be used.
+
+There are 5 columns which includes age group, alcohol consumption, tobacco consumption, number of cases and number of controls and 88 rows in the data.
+
+### Import Data
+
+Data is imported and alcgp and tobgp values are standardized. Then, rate of cases is added since it is more meaningful to make regression on case rate other than number of cases.
+```{r message=FALSE, warning=FALSE, error=FALSE, fig.width= 12, fig.align = "center"}
+esophData<-esoph
+esophData %>% glimpse()
+
+# standardize alcgp and tobgp observations
+alcgp<- data.frame(do.call('rbind', strsplit(as.character(esophData$alcgp),'g/day',fixed=TRUE)))
+tobgp<- data.frame(do.call('rbind', strsplit(as.character(esophData$tobgp),'g/day',fixed=TRUE)))
+esophData<- cbind(esophData[,1],alcgp,tobgp,esophData[,4:5]) 
+names(esophData)[] <- c("agegp","alcgp","tobgp","ncases","ncontrols")
+
+# Add a caseRate column
+esophData<-esophData %>%
+           mutate(caseRate= ncases/ncontrols)
+
+esophData %>% glimpse()
+```
+
+### Exploratory Data Analysis
+
+Before constructing a linear regression model, to see whether there is a significant relationship between  getting esophageal cancer and age and consumption of alcohol & tobacco, plots are drawn to get an initial insight.
+
+Alcohol consumption seems to have an significant effect on getting esophageal cancer. Lower the alcohol consumption, lower the esophageal cancer risk rate. Above 80g daily consumption risk increase is more prominent.
+
+```{r message=FALSE, warning=FALSE, error=FALSE, fig.width= 12, fig.align = "center"}
+ggplot(esophData, aes(x=alcgp, y=caseRate))+
+  geom_point(color="olivedrab4")+
+  theme_classic()+
+  labs(title="Effect of Alcohol Consumption on Esophageal Cancer Case Rate",
+            y="Esophageal cancer Case Rate",
+            x="Alcohol consumption")
+```
+
+Tobacco consumption also seem to effect cancer case rate especialy above 30g daily consumption cancer risk is incrases.
+
+```{r message=FALSE, warning=FALSE, error=FALSE, fig.width= 12, fig.align = "center"}
+ggplot(esophData, aes(x=tobgp, y=caseRate))+
+  geom_point(color="olivedrab4")+
+  theme_classic()+
+  labs(title="Effect of Tobacco Consumption on Esophageal Cancer Case Rate",
+            y="Esophageal cancer Case Rate",
+            x="Tobacco consumption")
+```
+
+Between 25-44 ages esophageal cancer rate seems to be lower, after 44+ age cancer risk increases.
+
+```{r message=FALSE, warning=FALSE, error=FALSE, fig.width= 12, fig.align = "center"}
+ggplot(esophData, aes(x=agegp, y=caseRate))+
+  geom_point(color="olivedrab4")+
+  theme_classic()+
+  labs(title="Effect of Age on Esophageal Cancer Case Rate",
+            y="Esophageal cancer Case Rate",
+            x="Age Group")
+```
+
+### Linear Regression
+
+Linear Regression model is constructed to see whether age, tobacco consumption and alcohol consumption effects the risk of having esophageal cancer. 
+
+ - The results of linear regression model are similar to the conclusions drawn above by looking at plots.
+
+ - Alcohol consumption has a significant influence on getting esophageal cancer since p values are greater than 0.1 (Cofidence level is taken as %90).More alcohol consumption leads to increase in esophageal cancer risk.
+
+ - Tobacco consumption also seems to have an effect on esophageal cancer risk according to p-values. If daily consumption is above 80g, the risk increases.
+
+- Lastly, age also influences risk of getting esophageal cancer.
+
+```{r message=FALSE, warning=FALSE, error=FALSE, fig.width= 12, fig.align = "center"}
+esophModel<-lm(caseRate~as.factor(agegp)+alcgp+tobgp, esophData)
+summary(esophModel)
+```
+
+## Young People Survey
+
+In the second part of the assignment, Young People Survey data will be analyzed deeply in order to get insights from it. 
+
+Data is downloaded from [Kaggle](https://www.kaggle.com/miroslavsabo/young-people-survey)
+
+### Import data
+
+There are 150 columns (interests & hobbies categories) and 1010 rows(responses) in the data.
+
+```{r message=FALSE, warning=FALSE, error=FALSE, fig.width= 12, fig.align = "center"}
+surveyData<- read.csv("responses.csv",header=TRUE)
+surveyData %>% glimpse()
+```
+
+139 out of 150 columns are numeric.
+
+```{r message=FALSE, warning=FALSE, error=FALSE, fig.width= 12, fig.align = "center"}
+surveyDataNumeric<-select_if(surveyData, is.numeric) %>%
+                  replace(is.na(.), 0)
+```
+
+People taken this survey is 20 years old on average.
+
+```{r}
+mean(surveyDataNumeric$Age)
+hist(surveyDataNumeric$Age)
+```
+
+#### PCA Analysis
+
+About %80 percent of population is explained by 70 variables so if a prediction model is wanted to be constructed, not all the variables are needed to be included into the model. One of two variables that have strong correlation between can be excluded from the model.
+
+```{r message=FALSE, warning=FALSE, error=FALSE, fig.width= 12, fig.align = "center"}
+survey_pca <- princomp(surveyDataNumeric,cor=T)
+
+plot(cumsum(survey_pca$sdev^2 / sum(survey_pca$sdev^2)), type="b",
+     xlab="Number of Variables",
+     ylab="Cumulative Variance")
+```
+
+### Clustering
+
+#### All Hobbies & Interests 
+
+To find optimal number of clusters for numeric variables a scree plot is constructed. Rate of decline in total within sum of squares error start to decrease for cluster number of 5. So, I will take optimal cluster number as 6.
+
+```{r message=FALSE, warning=FALSE, error=FALSE, fig.width= 12, fig.align = "center"}
+sdNumAll_dist <- 1 - cor(surveyDataNumeric) 
+sdNumAll_dist_sc <- cmdscale(sdNumAll_dist,k=2)
+colnames(sdNumAll_dist_sc) <- c("x","y")
+
+set.seed(58)
+
+#Find optimal number of clusters
+
+  #Initialize total within sum of squares , wss
+  wss<-0
+  
+  #For 1 to 50 cluster centers apply k-means
+  for(i in 1:50){
+    kmSurvey<-kmeans(sdNumAll_dist_sc, centers = i, nstart = 20)
+    wss[i]<-kmSurvey$tot.withinss}
+  
+  #Plot total within sum of squares vs. number of squares
+  plot(1:50,wss,type="b", 
+       xlab = "Number of Clusters",
+       ylab = "Within groups sum of squares")
+```
+
+Then, K-means algorithm was applied to whole numeric variables with 6 centers. Which hobbies & interests  is in which cluster and plot of clusters can be seen below.
+
+```{r message=FALSE, warning=FALSE, error=FALSE, fig.width= 12, fig.align = "center"}
+set.seed(58)
+#Apply K-Means with 6 clusters
+sclustAll<-kmeans(sdNumAll_dist_sc,centers=6)
+
+##Get the clusters
+d_sclustAll<-data.frame(hobbies_interests =names(sclustAll$cluster),cluster=sclustAll$cluster) %>%
+            arrange(cluster,hobbies_interests)
+
+d_sclustAll %>%
+  kbl() %>%
+  kable_minimal(full_width = F)
+
+fviz_cluster(sclustAll, data = sdNumAll_dist_sc, pointsize = 1,
+             labelsize = 8,  ggtheme = theme_classic())
+
+```
+
+To further explore data and get insights, some of the hobbies & interests are grouped together and analyses are made accordingly.
+
+#### Music
+
+K-means algorithm is applied to music genres and clusters of music genres can be seen on the plot below.
+
+```{r message=FALSE, warning=FALSE, error=FALSE, fig.width= 12, fig.align = "center"}
+surveyDataMusic<-surveyDataNumeric %>%
+                 select(Music:Opera)
+
+sdNumM_dist <- 1 - cor(surveyDataMusic) 
+sdNumM_dist_sc <- cmdscale(sdNumM_dist,k=2)
+colnames(sdNumM_dist_sc) <- c("x","y")
+
+set.seed(58)
+#Apply K-Means 
+sclustM<-kmeans(sdNumM_dist_sc,centers=4)
+
+#Plot clusters
+fviz_cluster(sclustM, data = sdNumM_dist_sc, pointsize = 1,
+             labelsize = 11,  ggtheme = theme_classic())
+```
+
+Also, hierarchical tree for music genres can be seen on below dendogram.
+
+```{r message=FALSE, warning=FALSE, error=FALSE, fig.width= 12, fig.align = "center"}
+hclustMusic<-hclust(d=dist(sdNumM_dist_sc), method = "complete")
+plot(hclustMusic)
+```
+
+#### Movies
+
+Same analysis is made to movies as well. Clusters of film genres can be seen on the plot below.
+
+```{r message=FALSE, warning=FALSE, error=FALSE, fig.width= 12, fig.align = "center"}
+surveyDataMovies<-surveyDataNumeric %>%
+                 select(Movies:Action)
+
+sdNumMov_dist <- 1 - cor(surveyDataMovies) 
+sdNumMov_dist_sc <- cmdscale(sdNumMov_dist,k=2)
+colnames(sdNumMov_dist_sc) <- c("x","y")
+
+set.seed(58)
+#Apply K-Means
+sclustMov<-kmeans(sdNumMov_dist_sc,centers=3)
+
+#Plot clusters
+fviz_cluster(sclustMov, data = sdNumMov_dist_sc, pointsize = 1,
+             labelsize = 11,  ggtheme = theme_classic())
+```
+
+Hierarchical tree for film genres can be seen on below dendogram
+
+```{r message=FALSE, warning=FALSE, error=FALSE, fig.width= 12, fig.align = "center"}
+hclustMovie<-hclust(d=dist(sdNumMov_dist_sc), method = "complete")
+plot(hclustMovie)
+```
+
+
+#### Humanities and Science 
+
+Clusters of Humanities and Science disciplines:
+
+```{r message=FALSE, warning=FALSE, error=FALSE, fig.width= 12, fig.align = "center"}
+surveyDataHS<-surveyDataNumeric %>%
+                 select(History:Law)
+
+sdNumHS_dist <- 1 - cor(surveyDataHS) 
+sdNumHS_dist_sc <- cmdscale(sdNumHS_dist,k=2)
+colnames(sdNumHS_dist_sc) <- c("x","y")
+
+set.seed(58)
+#Apply K-Means
+sclustHS<-kmeans(sdNumHS_dist_sc,centers=3)
+
+#Plot clusters
+fviz_cluster(sclustHS, data = sdNumHS_dist_sc, pointsize = 1,
+             labelsize = 10,  ggtheme = theme_classic())
+```
+
+Hierarchical tree for Humanities and Science disciplines:
+
+```{r message=FALSE, warning=FALSE, error=FALSE, fig.width= 12, fig.align = "center"}
+hclustHS<-hclust(d=dist(sdNumHS_dist_sc), method = "complete")
+plot(hclustHS)
+```
+
+#### Behavior and Personality Traits
+
+Clusters of Behavior and Personality traits:
+
+```{r message=FALSE, warning=FALSE, error=FALSE, fig.width= 12, fig.align = "center"}
+surveyDataBP<-surveyDataNumeric %>%
+                 select(Prioritising.workload:Cheating.in.school)
+
+sdNumBP_dist <- 1 - cor(surveyDataBP) 
+sdNumBP_dist_sc <- cmdscale(sdNumBP_dist,k=2)
+colnames(sdNumBP_dist_sc) <- c("x","y")
+
+set.seed(58)
+#Apply K-Means 
+sclustBP<-kmeans(sdNumBP_dist_sc,centers=3)
+
+#Plot clusters
+fviz_cluster(sclustBP, data = sdNumBP_dist_sc, pointsize = 1,
+             labelsize = 9,  ggtheme = theme_classic())
+```
+
+Hierarchical tree for Behavior and Personality traits:
+
+```{r message=FALSE, warning=FALSE, error=FALSE, fig.width= 12, fig.align = "center"}
+hclustBP<-hclust(d=dist(sdNumBP_dist_sc), method = "complete")
+plot(hclustBP)
+```
+
+#### Fears
+
+Clusters of fears:
+
+```{r message=FALSE, warning=FALSE, error=FALSE, fig.width= 12, fig.align = "center"}
+
+surveyDataF<-surveyDataNumeric %>%
+                 select(Adrenaline.sports:Fear.of.public.speaking)
+
+sdNumF_dist <- 1 - cor(surveyDataF) 
+sdNumF_dist_sc <- cmdscale(sdNumF_dist,k=2)
+colnames(sdNumF_dist_sc) <- c("x","y")
+
+set.seed(58)
+#Apply K-Means
+sclustF<-kmeans(sdNumF_dist_sc,centers=3)
+
+#Plot clusters
+fviz_cluster(sclustF, data = sdNumF_dist_sc, pointsize = 1,
+             labelsize = 9,  ggtheme = theme_classic())
+```
+
+Hierarchical tree for fears:
+
+```{r message=FALSE, warning=FALSE, error=FALSE, fig.width= 12, fig.align = "center"}
+hclustF<-hclust(d=dist(sdNumF_dist_sc), method = "complete")
+plot(hclustF)
+```
+
+#### Regression on Happiness
+
+Lastly, to see which factors have an significant influence on happiness level index, linear regression model is constructed.
+If confidence level is taken as as %90, below hobbies and interests seem to have an significant influence on happiness level:
+
+ - Positive Relationship:
+   - Classical Music 
+   - Reggae..Ska 
+   - Physics                                    
+   - History
+   - Geography
+   - Fun.with.friends  
+   - Daily.events  
+   - Prioritising.workload    
+   - Fake
+   - Hypochondria
+   - Compassion.to.animals 
+   - Dreams 
+   - Energy.levels     
+   - Parents..advice   
+   - Spending.on.gadgets   
+
+- Negative Relationship:
+  - Classical Music 
+  - Action Movies
+  - History  
+  - Internet
+  - Science.and.technology   
+  - Eating.to.survive         
+  - Loneliness     
+  - Changing.the.past 
+  - Interests.or.hobbies
+  - Internet.usag-eless than an hour a day
+  - Internet.usage-most of the day 
+  - Education-doctorate degree         
+
+Important note: Correlation does not imply causation! There may be correlation between above variables and happiness levels but that that does not mean that they causes happiness or unhappiness.
+  
+```{r message=FALSE, warning=FALSE, error=FALSE, fig.width= 12, fig.align = "center"}
+myFunc <-paste("Happiness.in.life ~ Music",paste("+", names(surveyData)[-1],collapse="",sep=""))
+Happiness<-lm(myFunc,data = surveyData)
+summary(Happiness)
+```
+
+
+## References
+
+ - https://stackoverflow.com/questions/7069076/split-column-at-delimiter-in-data-frame
+
+ - https://stackoverflow.com/questions/5863097/selecting-only-numeric-columns-from-a-data-frame
+
+ - https://learn.datacamp.com/courses/unsupervised-learning-in-r
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
