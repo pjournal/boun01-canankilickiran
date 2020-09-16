@@ -1,0 +1,114 @@
+---
+title: "Assignment 1"
+author: "Canan Kilickiran"
+date: "15 09 2020"
+output: 
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    toc_depth: 4
+---
+
+<style>
+
+#TOC {
+  color: #708090;
+  font-family: Calibri;
+  border-color: #708090;
+}
+
+#header {
+  color: #F08080;
+  background-color: #F5F5F5;
+  font-family: Calibri;
+}
+
+body {
+  color: #708090;
+  font-family: Calibri;
+  background-color: #F5F5F5;
+}
+
+pre {
+  color: #708090;
+  background-color: #F8F8FF;
+}
+</style>
+
+## Introduction
+
+I had graduated from Middle East Technical University -Industrial Engineering Department at 2016 and started to work  at Vestel at that time as a Supply Chain Specialist. For 3.5 years, my main duty was to make medium-and long-term factory production plans under the internal and external constraints. Also, I was responsible for designing and managing system enhacement projects as a project leader. At January 2020, my job title had changed and now I work as a Sales and Demand Planning Speacialist. My main job is to preapare monthly forecasts for products and customers and make sales plan accordingly. 
+
+Currently, I use R to preapare forecasts at work and also I am planning to expand my knowledge on R and data analyis, that is why I am taking this course.
+
+[Here](www.linkedin.com/in/canan-kılıçkıran/) is my Linkedin account.
+
+## Forecasting in R
+
+Forecasting is crucial for businesses because it guides and helps to foresee future. In this post ensemple learning model construction in R is explained. This ensemnle models combine multiple forecasts from one or multiple forecasts to avoid overfit. Two of these models are explained in this post, Bagging and Random Forest.
+
+ - Bagging is ensemble learning meta-algorithm which is used to improve forecast accuracy and to avoid overfitting. Bagging also consists of two methods which are RPART and CTREE
+ 
+ - Random Forest is an improved version of Bagging method. It uses a modified tree learning algorithm that selects, at each candidate split in the learning process, a random subset of the features. 
+
+[Post link](https://www.r-bloggers.com/ensemble-learning-for-time-series-forecasting-in-r/)
+
+## Customer Segmentation in R
+
+Customer is the most important factor for any business so it is important to segment customers in order understand them. There are two kinds of segmentation methods that has been explained in this post, K-means and  Principal Component Analysis (PCA). 
+
+ - K-means is a fast and effective algorithm for customer segmentatition for especially numerical data. 
+ 
+ - PCA is a dimension reduction algorithm which aims to visualize important aspects of the dataset by data compositon and transformation into principal components (PC) maximizing the linear variance of the data. PCA is not a direct solution and from a different perspective, it can help to detect customer clusters which are not found by K-means.
+ 
+ [Post link](https://towardsdatascience.com/customer-segmentation-5f25247eb7e2)
+
+## Visualization in R
+
+In this century, there are massive amounts of data and it is impossible to get accurate insights from it without proper visualizations. In this post, writer explains 7 important visualizations that should be learned and gives information about selecting the right graphs. Each of below chart types, when and how they should be used and their implementation examples are provided in the post.
+
+ - Scatter Plot
+ - Histogram
+ - Bar & Stack Bar Chart
+ - Box Plot
+ - Area Chart
+ - Heat Map
+ - Correlogram
+
+[Post link](https://www.r-bloggers.com/7-visualizations-you-should-learn-in-r/)
+
+## Youtube post
+
+In this Youtube video Using R to Support COVID Response at the Health System topic is discussed. 
+
+In the video it is said that Covid-19 model team are formed and they are tasked with present analytics about current patients, create predictions of upcoming impact on their health system and provide recommendations for planning bed capacity. RStudio Server pro is the main platform that the team uses every day for Covid analyses. RStudio allowed them easily connect to Wisconsin's Department of Health Services to gather publicly available data. They developed SEIR predictive model that took clinical features into account and they used R MArkdown heavily for analysis of the prediction model that they have built.
+
+They also utilised R connect to authenticate and distribute all their markdown and other reports in a secure way to different stakeholders. They developed a dashboard that allows stakeholders to simulate bed capacity and availability based on different events.
+
+
+[Video link](https://www.youtube.com/watch?v=h0c5iB_VFcg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
